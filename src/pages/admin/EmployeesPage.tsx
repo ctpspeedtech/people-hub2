@@ -2,17 +2,17 @@ import { useEffect, useState } from "react";
 import { Box, Heading, Table, Spinner, Text, HStack, Button, Input, Flex, Spacer, useBreakpointValue } from "@chakra-ui/react";
 import { useEmployeeStore } from "../../store/employeeStore";
 
-import type { EmployeeWithProfile as EmployeeType } from "../../services/employeeService";
+import type { Employee } from "../../services/employeeService";
 import { getAvatarUrl } from "../../services/employeeService";
 import EmployeeModal from "../../components/EmployeeModal";
 
 export default function EmployeesPage() {
-  const employees = useEmployeeStore((s) => s.employees) as EmployeeType[];
+  const employees = useEmployeeStore((s) => s.employees) as Employee[];
   console.log('EmployeesPage employees:', employees);
   const loading = useEmployeeStore((s) => s.loading);
   const fetchAll = useEmployeeStore((s) => s.fetchAll);
   const remove = useEmployeeStore((s) => (s as any).remove);
-  const [editing, setEditing] = useState<EmployeeType | null>(null);
+  const [editing, setEditing] = useState<Employee | null>(null);
   const [avatarMap, setAvatarMap] = useState<Record<string, string | null>>({});
   const [query, setQuery] = useState("");
   const showDetails = useBreakpointValue({ base: true, md: true });
@@ -63,7 +63,7 @@ export default function EmployeesPage() {
     return (
       e.email?.toLowerCase().includes(q) ||
       e.full_name?.toLowerCase().includes(q) ||
-      (e.departments?.[0]?.name ?? "").toLowerCase().includes(q)
+      (e.departments?.name ?? "-").toLowerCase().includes(q)
     );
   });
 
@@ -124,7 +124,7 @@ export default function EmployeesPage() {
                 </Table.Cell>
                 <Table.Cell px={4} py={3}>{e.email}</Table.Cell>
                 <Table.Cell px={4} py={3}>{e.full_name}</Table.Cell>
-                <Table.Cell px={4} py={3}>{e.departments?.toString() ?? "-"}</Table.Cell>
+                <Table.Cell px={4} py={3}>{e.departments?.name ?? "-"}</Table.Cell>
                 {showDetails && <Table.Cell px={4} py={3}>{e.position ?? "-"}</Table.Cell>}
                 {showDetails && <Table.Cell px={4} py={3}>{e.role ?? "-"}</Table.Cell>}
                 {showDetails && <Table.Cell px={4} py={3}>{e.phone ?? "-"}</Table.Cell>}

@@ -26,12 +26,10 @@ export type CreateEmployeePayload = Pick<EmployeeBase, 'email' | 'full_name' | '
 export type Employee = EmployeeBase & {
   id: string;
   // Supabase returns related rows as an array when selecting the relation
-  departments?: { id: string; name: string }[] | null;
+  departments?: { id: string; name: string } | null;
   created_at?: string | null;
   role?: string | null;
 };
-
-export type EmployeeWithProfile = Employee;
 
 /* =======================
    API CALLS
@@ -45,7 +43,7 @@ export async function createEmployee(payload: CreateEmployeePayload) {
   );
 
   if (error) throw error;
-  return data as EmployeeWithProfile;
+  return data as Employee;
 }
 
 // load danh sách employee
@@ -66,7 +64,7 @@ const PROFILE_SELECT = `
   )
 `;
 
-export async function fetchEmployees(): Promise<EmployeeWithProfile[]> {
+export async function fetchEmployees(): Promise<Employee[]> {
   const { data, error } = await supabase
     .from('profiles')
     .select(PROFILE_SELECT)
@@ -74,7 +72,7 @@ export async function fetchEmployees(): Promise<EmployeeWithProfile[]> {
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return (data ?? []) as EmployeeWithProfile[];
+  return data as unknown as Employee[];
 }
 
 // upload avatar file to storage and return upload result
@@ -120,7 +118,7 @@ export async function getAvatarUrl(pathOrUrl: string, expiresSec = 60): Promise<
 }
 
 // Get single employee/profile by id
-export async function getEmployee(id: string): Promise<EmployeeWithProfile | null> {
+export async function getEmployee(id: string): Promise<Employee | null> {
   const { data, error } = await supabase
     .from("profiles")
     .select(`
@@ -144,11 +142,11 @@ export async function getEmployee(id: string): Promise<EmployeeWithProfile | nul
 
   if (error) throw error;
   const row = (data ?? [])[0];
-  return (row ?? null) as EmployeeWithProfile | null;
+  return row ? (row as unknown as Employee) : null;
 }
 
 // Update profile
-export async function updateEmployee(id: string, payload: Partial<CreateEmployeePayload> | Record<string, any>): Promise<EmployeeWithProfile> {
+export async function updateEmployee(id: string, payload: Partial<CreateEmployeePayload> | Record<string, any>): Promise<Employee> {
   const { data, error } = await supabase
     .from("profiles")
     .update(payload)
@@ -158,7 +156,7 @@ export async function updateEmployee(id: string, payload: Partial<CreateEmployee
 
   if (error) throw error;
   const row = (data ?? [])[0];
-  return row as EmployeeWithProfile;
+  return row as Employee;
 }
 
 // Delete profile
