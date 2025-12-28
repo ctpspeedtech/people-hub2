@@ -1,5 +1,13 @@
 import { useState } from 'react';
 import { useAuthStore } from '../store/authStore';
+import {
+  Box,
+  VStack,
+  Heading,
+  Input,
+  Button,
+  Text,
+} from '@chakra-ui/react';
 
 export default function Login() {
   const login = useAuthStore((s) => s.login);
@@ -11,34 +19,46 @@ export default function Login() {
   const handleLogin = async () => {
     try {
       await login(email, password);
-      alert('Login success');
+      alert('Login successful');
     } catch (e: any) {
-      alert(e.message);
+      alert(e.message || 'Login failed');
     }
   };
 
   return (
-    <div style={{ padding: 40 }}>
-      <h2>Login</h2>
+    <Box minH="100vh" bg="gray.50" display="flex" alignItems="center" justifyContent="center" p={4}>
+      <Box w={{ base: '100%', sm: '420px' }} bg="white" p={8} rounded="lg" shadow="sm">
+        <Heading size="lg" mb={6} textAlign="center">Sign in to your account</Heading>
 
-      <input
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <br /><br />
+        <VStack as="form" gap={4} onSubmit={(e) => { e.preventDefault(); handleLogin(); }}>
+          <Box width="100%">
+            <Text mb={1} fontSize="sm" color="gray.600">Email</Text>
+            <Input
+              type="email"
+              placeholder="you@company.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoFocus
+            />
+          </Box>
 
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-      <br /><br />
+          <Box width="100%">
+            <Text mb={1} fontSize="sm" color="gray.600">Password</Text>
+            <Input
+              type="password"
+              placeholder="Your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </Box>
 
-      <button onClick={handleLogin} disabled={loading}>
-        Login
-      </button>
-    </div>
+          <Button colorScheme="blue" width="full" mt={2} onClick={handleLogin} loading={loading} type="submit">
+            Login
+          </Button>
+        </VStack>
+
+        <Text mt={4} fontSize="sm" color="gray.500" textAlign="center">Need an account? Ask your administrator to create one.</Text>
+      </Box>
+    </Box>
   );
 }
