@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   VStack,
@@ -10,11 +11,18 @@ import {
 } from '@chakra-ui/react';
 
 export default function Login() {
+  const navigate = useNavigate();
   const login = useAuthStore((s) => s.login);
   const loading = useAuthStore((s) => s.loading);
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const user = useAuthStore(s => s.user);
+
+  useEffect(() => {
+    if (user) {
+      navigate('/admin/');
+    }
+  }, [user, navigate]);
 
   const handleLogin = async () => {
     try {
@@ -56,8 +64,7 @@ export default function Login() {
             Login
           </Button>
         </VStack>
-
-        <Text mt={4} fontSize="sm" color="gray.500" textAlign="center">Need an account? Ask your administrator to create one.</Text>
+        <Text mt={4} fontSize="sm" color="gray.500" textAlign="center">Ask your administrator to create new account!</Text>
       </Box>
     </Box>
   );

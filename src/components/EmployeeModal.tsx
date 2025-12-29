@@ -1,7 +1,7 @@
 import { Button, Input, Stack, Box, CloseButton, Text, Image } from "@chakra-ui/react";
 import { useState, useEffect, type ChangeEvent } from "react";
 
-import type { EmployeeWithProfile as EmployeeType } from "../services/employeeService";
+import type { Employee as EmployeeType } from "../services/employeeService";
 import { createEmployee, updateEmployee, uploadAvatar } from "../services/employeeService";
 import { departmentService } from "../services/departmentService";
 
@@ -10,6 +10,7 @@ interface Props {
 	onClose?: () => void;
 	employee?: EmployeeType | null;
 	defaultOpen?: boolean;
+	text: string;
 	[key: string]: any;
 }
 
@@ -24,10 +25,10 @@ export default function EmployeeModal({ onSuccess, onClose, employee = null, def
 		level: employee?.level ?? "",
 		role: employee?.role ?? "",
 		birthday: employee?.birthday ?? "",
-		address: (employee as any)?.address ?? "",
-		education: (employee as any)?.education ?? "",
-		note: (employee as any)?.note ?? "",
-		department_id: employee?.departments?.[0]?.id ?? "",
+		address: employee?.address ?? "",
+		education: employee?.education ?? "",
+		note: employee?.note ?? "",
+		department_id: employee?.departments?.id ?? "",
 	}));
 	const [departments, setDepartments] = useState<Array<{ id: string; name: string }>>([]);
 	const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -45,15 +46,12 @@ export default function EmployeeModal({ onSuccess, onClose, employee = null, def
 				level: employee.level ?? "",
 				role: employee.role ?? "",
 				birthday: employee.birthday ?? "",
-				address: (employee as any).address ?? "",
-				education: (employee as any).education ?? "",
-				note: (employee as any).note ?? "",
-				department_id: employee.departments?.[0]?.id ?? "",
+				address: employee.address ?? "",
+				education: employee.education ?? "",
+				note: employee.note ?? "",
+				department_id: employee.departments?.id ?? "",
 			}));
 			setAvatarPreview(employee.avatar_url ?? null);
-			setOpen(true);
-		} else if (defaultOpen) {
-			setOpen(true);
 		}
 
 		// load departments once
@@ -127,8 +125,7 @@ export default function EmployeeModal({ onSuccess, onClose, employee = null, def
 
 	return (
 		<>
-			<Button colorScheme="blue" {...props} onClick={() => setOpen(true)}>Add Employee</Button>
-
+			<Button size="sm" colorScheme="blue" {...props} onClick={() => setOpen(true)}>{props.text}</Button>
 			{open && (
 				<Box position="fixed" inset={0} bg="blackAlpha.600" display="flex" alignItems="center" justifyContent="center" zIndex={40} onClick={() => setOpen(false)}>
 					<Box bg="white" width={["95%", "600px"]} borderRadius="md" p={6} position="relative" onClick={(e) => e.stopPropagation()}>
@@ -170,11 +167,11 @@ export default function EmployeeModal({ onSuccess, onClose, employee = null, def
 									onChange={(e: ChangeEvent<HTMLInputElement>) => setForm({...form, birthday: e.target.value})}
 								/>
 							</Box>
-							<Input
+							{/* <Input
 								placeholder="Role"
 								value={form.role}
 								onChange={(e: ChangeEvent<HTMLInputElement>) => setForm({...form, role: e.target.value})}
-							/>
+							/> */}
 							<Input
 								placeholder="Address"
 								value={form.address}

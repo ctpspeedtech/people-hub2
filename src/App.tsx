@@ -21,7 +21,6 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
-
         <Route
           path="/admin/*"
           element={
@@ -30,7 +29,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
     </BrowserRouter>

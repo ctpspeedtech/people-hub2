@@ -1,5 +1,10 @@
-import { HStack, Box, Heading, Button, Link as ChakraLink } from "@chakra-ui/react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  HStack,
+  Box,
+  Heading,
+  Button,
+} from "@chakra-ui/react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 
 export default function Navbar() {
@@ -11,15 +16,40 @@ export default function Navbar() {
 
   return (
     <Box bg="white" boxShadow="sm">
-      <HStack px={6} py={3} spacing={4} align="center">
-        <Heading size="sm">People Hub</Heading>
+      <HStack px={6} py={3} >
+        <Heading size="xl">People Hub</Heading>
+        <Box w={5}></Box>
+        <Button
+          onClick={()=>{
+            navigate("/admin/employees")
+          }}
+          variant="ghost"
+          color={isActive("/admin/employees") ? "blue.600" : undefined}
+        >
+          Employees
+        </Button>
 
-        <ChakraLink as={Link} to="/admin/employees" color={isActive('/admin/employees') ? 'blue.600' : undefined}>Employees</ChakraLink>
-        <ChakraLink as={Link} to="/admin/departments" color={isActive('/admin/departments') ? 'blue.600' : undefined}>Departments</ChakraLink>
-
+        <Button
+                  onClick={()=>{
+            navigate("/admin/departments")
+          }}
+          variant="ghost"
+          color={isActive("/admin/departments") ? "blue.600" : undefined}
+        >
+          Departments
+        </Button>
         <Box flex="1" />
-
-        <Button size="sm" variant="ghost" onClick={async () => { await logout(); navigate('/login'); }}>Logout</Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          color={"red"}
+          onClick={async () => {
+            await logout();
+            navigate("/login");
+          }}
+        >
+          Logout
+        </Button>
       </HStack>
     </Box>
   );

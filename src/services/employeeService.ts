@@ -57,6 +57,9 @@ const PROFILE_SELECT = `
   level,
   created_at,
   role,
+  education,
+  note,
+  address,
   avatar_url,
   departments (
     id,
@@ -121,22 +124,7 @@ export async function getAvatarUrl(pathOrUrl: string, expiresSec = 60): Promise<
 export async function getEmployee(id: string): Promise<Employee | null> {
   const { data, error } = await supabase
     .from("profiles")
-    .select(`
-      id,
-      email,
-      full_name,
-      position,
-      phone,
-      birthday,
-      level,
-      created_at,
-      role,
-      avatar_url,
-      departments (
-        id,
-        name
-      )
-    `)
+    .select(PROFILE_SELECT)
     .eq("id", id)
     .limit(1);
 
@@ -160,7 +148,66 @@ export async function updateEmployee(id: string, payload: Partial<CreateEmployee
 }
 
 // Delete profile
-export async function deleteEmployee(id: string): Promise<void> {
-  const { error } = await supabase.from("profiles").delete().eq("id", id);
+// export async function deleteEmployee(id: string): Promise<void> {
+//   const { error } = await supabase.from("profiles").delete().eq("id", id);
+//   if (error) throw error;
+// }
+
+// Remove avatar file from storage
+export async function removeAvatar(path: string): Promise<void> {
+  if (!path) return;
+
+  const bucket = 'avatars';
+
+  const { error } = await supabase.storage
+    .from(bucket)
+    .remove([path]);
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function removeEmployeeAvatar(
+  employeeId: string,
+  avatarPath: string
+): Promise<void> {
+  // 1. remove file
+  await removeAvatar(avatarPath);
+
+  // 2. clear avatar_url trong profile
+  const { error } = await supabase
+    .from('profiles')
+    .update({ avatar_url: null })
+    .eq('id', employeeId);
+
   if (error) throw error;
+}
+
+export async function deleteEmployee(id: string): Promise<void> {
+  // 1. lấy avatar_path trước
+  const { data } = await supabase
+    .from('profiles')
+    .select('avatar_url')
+    .eq('id', id)
+    .single();
+
+  const avatarPath = data?.avatar_url;
+
+  // 2. delete profile
+  const { error } = await supabase
+    .from('profiles')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+
+  // 3. delete avatar file (không block nếu lỗi)
+  if (avatarPath && !avatarPath.startsWith('http')) {
+    try {
+      await removeAvatar(avatarPath);
+    } catch (err) {
+      console.warn('Failed to remove avatar file:', err);
+    }
+  }
 }
