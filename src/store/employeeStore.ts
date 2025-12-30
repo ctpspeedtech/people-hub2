@@ -47,17 +47,10 @@ export const useEmployeeStore = create<EmployeeState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       await deleteEmployee(id);
-
-      // ✅ Cách 1: update local state (nhanh, UX tốt)
       set((state) => ({
         employees: state.employees.filter((e) => e.id !== id),
         loading: false,
       }));
-
-      // 🔁 Cách 2 (nếu muốn sync tuyệt đối với DB)
-      // const data = await fetchEmployees();
-      // set({ employees: data, loading: false });
-
     } catch (e: any) {
       set({ error: e.message, loading: false });
       throw e;

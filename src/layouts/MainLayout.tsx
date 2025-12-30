@@ -2,11 +2,10 @@ import { Outlet } from "react-router-dom";
 import { Box } from "@chakra-ui/react";
 import Navbar from "../components/Navbar";
 
-export default function AdminLayout() {
+export default function MainLayout() {
   return (
     <Box minH="100vh" bg="gray.50">
       <Navbar />
-      <Box pt={10}></Box>
       <Box p={6}>
         <Outlet />
       </Box>

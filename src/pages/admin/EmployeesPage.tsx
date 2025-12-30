@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   Box,
   Heading,
@@ -6,366 +6,187 @@ import {
   Spinner,
   Text,
   HStack,
-  Button,
   Input,
   Flex,
   Spacer,
   useBreakpointValue,
 } from "@chakra-ui/react";
+import { Avatar } from "@chakra-ui/react/avatar";
 import { useEmployeeStore } from "../../store/employeeStore";
-
-import type { Employee } from "../../services/employeeService";
-import { getAvatarUrl } from "../../services/employeeService";
+import { getAvatarUrl, type Employee } from "../../services/employeeService";
 import EmployeeModal from "../../components/EmployeeModal";
+import { useNavigate } from "react-router-dom";
+
+// Kiểu dữ liệu cho Sort
+type SortConfig = {
+  key: keyof Employee | "department_name";
+  direction: "asc" | "desc";
+};
 
 export default function EmployeesPage() {
-  const employees = useEmployeeStore((s) => s.employees) as Employee[];
-  const loading = useEmployeeStore((s) => s.loading);
-  const fetchAll = useEmployeeStore((s) => s.fetchAll);
-  const remove = useEmployeeStore((s) => s.remove);
+  const navigate = useNavigate();
+  const { employees, loading, fetchAll } = useEmployeeStore();
+  
   const [avatarMap, setAvatarMap] = useState<Record<string, string | null>>({});
   const [query, setQuery] = useState("");
-  const showDetails = useBreakpointValue({ base: false, md: true });
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [toasts, setToasts] = useState<
-    Array<{ id: number; text: string; type?: "success" | "error" }>
-  >([]);
+  
+  // 1. State cho Sort
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ 
+    key: "full_name", 
+    direction: "asc" 
+  });
 
-  const pushToast = (text: string, type: "success" | "error" = "success") => {
-    const id = Date.now();
-    setToasts((t) => [...t, { id, text, type }]);
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3500);
-  };
+  const showDetails = useBreakpointValue({ base: false, lg: true });
+
+  useEffect(() => {
+    fetchAll();
+  }, [fetchAll]);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       const map: Record<string, string | null> = {};
       for (const e of employees) {
-        const raw = e.avatar_url as string | undefined | null;
-        if (!raw) {
-          map[e.id] = null;
-          continue;
-        }
-
-        if (raw.startsWith("http://") || raw.startsWith("https://")) {
-          map[e.id] = raw;
-          continue;
-        }
-
-        try {
-          const url = await getAvatarUrl(raw, 60);
-          map[e.id] = url;
-        } catch (err) {
-          map[e.id] = null;
-        }
+        if (!e.avatar_url) map[e.id] = null;
+        else if (e.avatar_url.startsWith("http")) map[e.id] = e.avatar_url;
+        else map[e.id] = await getAvatarUrl(e.avatar_url, 60).catch(() => null);
       }
       if (mounted) setAvatarMap(map);
     })();
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [employees]);
 
-  useEffect(() => {
-    fetchAll();
-  }, []);
+  // 2. Hàm xử lý khi click vào Header
+  const requestSort = (key: SortConfig["key"]) => {
+    let direction: "asc" | "desc" = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
 
-  const filtered = employees.filter((e) => {
+  // 3. Logic Lọc và Sắp xếp (Tối ưu trong useMemo)
+  const processedData = useMemo(() => {
+    // A. Lọc theo query
     const q = query.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      e.email?.toLowerCase().includes(q) ||
-      e.full_name?.toLowerCase().includes(q) ||
-      (e.departments?.name ?? "-").toLowerCase().includes(q)
-    );
-  });
+    let result = [...employees];
+    
+    if (q) {
+      result = result.filter((e) => 
+        e.email?.toLowerCase().includes(q) ||
+        e.full_name?.toLowerCase().includes(q) ||
+        (e.departments?.name ?? "").toLowerCase().includes(q)
+      );
+    }
+
+    // B. Sắp xếp
+    result.sort((a: any, b: any) => {
+      let valA, valB;
+
+      // Xử lý trường hợp đặc biệt cho lồng dữ liệu (phòng ban)
+      if (sortConfig.key === "department_name") {
+        valA = a.departments?.name ?? "";
+        valB = b.departments?.name ?? "";
+      } else {
+        valA = a[sortConfig.key] ?? "";
+        valB = b[sortConfig.key] ?? "";
+      }
+
+      if (valA < valB) return sortConfig.direction === "asc" ? -1 : 1;
+      if (valA > valB) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return result;
+  }, [employees, query, sortConfig]);
 
   return (
     <Box p={6}>
-      <Flex mb={6} align="center">
-        <Heading size="lg">Employees Management</Heading>
+      <Flex mb={6} align="center" direction={{ base: "column", md: "row" }} gap={4}>
+        <Heading size="lg">Quản lý nhân viên</Heading>
         <Spacer />
-        <HStack maxW="360px" mr={4} gap={2}>
-          <Box as="span" aria-hidden mr={2}>
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M21 21l-4.35-4.35"
-                stroke="#718096"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <circle cx="11" cy="11" r="6" stroke="#718096" strokeWidth="2" />
-            </svg>
-          </Box>
-          <Input
-            placeholder="Search by name, email or department"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
+        <HStack width={{ base: "full", md: "auto" }} gap={3}>
+          <Input 
+            placeholder="Tìm kiếm..." 
+            value={query} 
+            onChange={(e) => setQuery(e.target.value)} 
           />
+          <EmployeeModal onSuccess={fetchAll} text="Thêm nhân viên" />
         </HStack>
-        <EmployeeModal
-          colorScheme="blue"
-          mr={2}
-          onSuccess={fetchAll}
-          text={"Add Employee"}
-        />
       </Flex>
 
-      <Box overflowX="auto">
-        <Table.Root size="sm" variant="line" showColumnBorder>
-          <Table.Header>
+      <Box overflowX="auto" borderRadius="lg" border="1px solid" borderColor="gray.200">
+        <Table.Root size="sm" variant="line" interactive>
+          <Table.Header bg="gray.50">
             <Table.Row>
-              <Table.ColumnHeader px={4} py={3}>
-                Avatar
-              </Table.ColumnHeader>
-              <Table.ColumnHeader px={4} py={3}>
-                Full Name
-              </Table.ColumnHeader>
-              <Table.ColumnHeader px={4} py={3}>
-                Department
-              </Table.ColumnHeader>
+              <Table.ColumnHeader w="60px">Avatar</Table.ColumnHeader>
+              
+              {/* Thêm Sortable Header */}
+              <SortHeader label="Họ tên" sortKey="full_name" config={sortConfig} onSort={requestSort} />
+              <SortHeader label="Phòng ban" sortKey="department_name" config={sortConfig} onSort={requestSort} />
+              <SortHeader label="Email" sortKey="email" config={sortConfig} onSort={requestSort} />
+              
               {showDetails && (
-                <Table.ColumnHeader px={4} py={3}>
-                  Position
-                </Table.ColumnHeader>
+                <>
+                  <SortHeader label="Vị trí" sortKey="position" config={sortConfig} onSort={requestSort} />
+                  <SortHeader label="Cấp bậc" sortKey="level" config={sortConfig} onSort={requestSort} />
+                  <Table.ColumnHeader>Số điện thoại</Table.ColumnHeader>
+                  <Table.ColumnHeader>Ngày sinh</Table.ColumnHeader>
+                </>
               )}
-              {showDetails && (
-                <Table.ColumnHeader px={4} py={3}>
-                  Education
-                </Table.ColumnHeader>
-              )}
-              <Table.ColumnHeader px={4} py={3}>
-                Email
-              </Table.ColumnHeader>
-              {showDetails && (
-                <Table.ColumnHeader px={4} py={3}>
-                  Address
-                </Table.ColumnHeader>
-              )}
-              {/* {showDetails && <Table.ColumnHeader px={4} py={3}>Role</Table.ColumnHeader>} */}
-              {showDetails && (
-                <Table.ColumnHeader px={4} py={3}>
-                  Phone
-                </Table.ColumnHeader>
-              )}
-              {showDetails && (
-                <Table.ColumnHeader px={4} py={3}>
-                  Birthday
-                </Table.ColumnHeader>
-              )}
-              {showDetails && (
-                <Table.ColumnHeader px={4} py={3}>
-                  Level
-                </Table.ColumnHeader>
-              )}
-              {/* {showDetails && <Table.ColumnHeader px={4} py={3}>Created</Table.ColumnHeader>} */}
-              {showDetails && (
-                <Table.ColumnHeader px={4} py={3}>
-                  Note
-                </Table.ColumnHeader>
-              )}
-              <Table.ColumnHeader px={4} py={3}></Table.ColumnHeader>
             </Table.Row>
           </Table.Header>
 
           <Table.Body>
-            {loading && employees.length === 0 ? (
-              <Table.Row>
-                <Table.Cell colSpan={11} textAlign="center" py={10}>
-                  <Spinner />
+            {processedData.map((e) => (
+              <Table.Row key={e.id} cursor="pointer" onClick={() => navigate(`/admin/employees/${e.id}`)}>
+                <Table.Cell>
+                  <Avatar.Root size="sm">
+                    <Avatar.Image src={avatarMap[e.id] ?? undefined} />
+                    <Avatar.Fallback name={e.full_name} />
+                  </Avatar.Root>
                 </Table.Cell>
+                <Table.Cell fontWeight="medium">{e.full_name}</Table.Cell>
+                <Table.Cell>{e.departments?.name ?? "-"}</Table.Cell>
+                <Table.Cell color="gray.600">{e.email}</Table.Cell>
+                {showDetails && (
+                  <>
+                    <Table.Cell>{e.position ?? "-"}</Table.Cell>
+                    <Table.Cell>{e.level ?? "-"}</Table.Cell>
+                    <Table.Cell>{e.phone ?? "-"}</Table.Cell>
+                    <Table.Cell>{e.birthday ? new Date(e.birthday).toLocaleDateString() : "-"}</Table.Cell>
+                  </>
+                )}
               </Table.Row>
-            ) : employees.length === 0 ? (
-              <Table.Row>
-                <Table.Cell colSpan={11} textAlign="center" py={10}>
-                  <Text color="gray.500">No employees found.</Text>
-                </Table.Cell>
-              </Table.Row>
-            ) : (
-              filtered.map((e) => (
-                <Table.Row key={e.id}>
-                  <Table.Cell px={4} py={3}>
-                    {avatarMap[e.id] ? (
-                      <img
-                        src={avatarMap[e.id] as string}
-                        alt={e.full_name}
-                        style={{
-                          width: 32,
-                          height: 32,
-                          objectFit: "cover",
-                          borderRadius: 6,
-                        }}
-                      />
-                    ) : (
-                      <div
-                        style={{
-                          width: 32,
-                          height: 32,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          background: "#edf2f7",
-                          borderRadius: 6,
-                        }}
-                      >
-                        {(e.full_name || e.email || "").charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                  </Table.Cell>
-                  <Table.Cell px={4} py={3} minW={200}>
-                    {e.full_name}
-                  </Table.Cell>
-                  <Table.Cell px={4} py={3} minW={200}>
-                    {e.departments?.name ?? "-"}
-                  </Table.Cell>
-                  {showDetails && (
-                    <Table.Cell px={4} py={3}>
-                      {e.position ?? "-"}
-                    </Table.Cell>
-                  )}
-                  {showDetails && (
-                    <Table.Cell px={4} py={3}>
-                      {e.education ?? "-"}
-                    </Table.Cell>
-                  )}
-                  <Table.Cell px={4} py={3}>
-                    {e.email}
-                  </Table.Cell>
-                  {showDetails && (
-                    <Table.Cell px={4} py={3}>
-                      {e.level ?? "-"}
-                    </Table.Cell>
-                  )}
-                  {showDetails && (
-                    <Table.Cell px={4} py={3}>
-                      {e.address ?? "-"}
-                    </Table.Cell>
-                  )}
-                  {/* {showDetails && <Table.Cell px={4} py={3}>{e.role ?? "-"}</Table.Cell>} */}
-                  {showDetails && (
-                    <Table.Cell px={4} py={3}>
-                      {e.phone ?? "-"}
-                    </Table.Cell>
-                  )}
-                  {showDetails && (
-                    <Table.Cell px={4} py={3}>
-                      {e.birthday
-                        ? new Date(e.birthday).toLocaleDateString()
-                        : "-"}
-                    </Table.Cell>
-                  )}
-                  {/* {showDetails && <Table.Cell px={4} py={3}>{e.created_at ? new Date(e.created_at).toLocaleDateString() : "-"}</Table.Cell>} */}
-                  {showDetails && (
-                    <Table.Cell px={4} py={3}>
-                      {e.note ?? "-"}
-                    </Table.Cell>
-                  )}
-                  <Table.Cell px={4} py={3}>
-                    <HStack gap={2}>
-                      <EmployeeModal
-                        employee={e}
-                        defaultOpen={false}
-                        onSuccess={() => {
-                          fetchAll();
-                          // setEditing(null);
-                        }}
-                        onClose={() => {}}
-                        text={"Edit"}
-                      />
-                      <Button
-                        size="sm"
-                        colorScheme="red"
-                        onClick={() => setConfirmDeleteId(e.id)}
-                      >
-                        Delete
-                      </Button>
-                    </HStack>
-                  </Table.Cell>
-                </Table.Row>
-              ))
-            )}
+            ))}
           </Table.Body>
         </Table.Root>
       </Box>
-
-      {/* Confirm delete overlay */}
-      {confirmDeleteId && (
-        <Box
-          position="fixed"
-          inset={0}
-          bg="blackAlpha.600"
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-          zIndex={40}
-          onClick={() => setConfirmDeleteId(null)}
-        >
-          <Box
-            bg="white"
-            width={["90%", "420px"]}
-            p={6}
-            borderRadius="md"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Box fontWeight="semibold" mb={4}>
-              Delete employee?
-            </Box>
-            <Box color="gray.600" mb={6}>
-              This action cannot be undone. Are you sure?
-            </Box>
-            <Box display="flex" justifyContent="flex-end">
-              <Button
-                variant="outline"
-                mr={3}
-                onClick={() => setConfirmDeleteId(null)}
-              >
-                Cancel
-              </Button>
-              <Button
-                colorScheme="red"
-                onClick={async () => {
-                  try {
-                    await remove(confirmDeleteId);
-                    pushToast("Employee deleted", "success");
-                    setConfirmDeleteId(null);
-                    fetchAll();
-                  } catch (err: any) {
-                    pushToast(err?.message || "Could not delete", "error");
-                  }
-                }}
-              >
-                Delete
-              </Button>
-            </Box>
-          </Box>
-        </Box>
-      )}
-
-      {/* Toasts */}
-      <Box position="fixed" bottom={6} right={6} zIndex={60}>
-        {toasts.map((t) => (
-          <Box
-            key={t.id}
-            mb={3}
-            px={4}
-            py={2}
-            bg={t.type === "success" ? "green.500" : "red.500"}
-            color="white"
-            borderRadius="md"
-            boxShadow="md"
-          >
-            {t.text}
-          </Box>
-        ))}
-      </Box>
     </Box>
+  );
+}
+
+// Component phụ cho Header có Sort
+function SortHeader({ label, sortKey, config, onSort }: { 
+  label: string, 
+  sortKey: SortConfig["key"], 
+  config: SortConfig, 
+  onSort: (key: SortConfig["key"]) => void 
+}) {
+  const isActive = config.key === sortKey;
+  return (
+    <Table.ColumnHeader 
+      onClick={() => onSort(sortKey)} 
+      cursor="pointer"
+      userSelect="none"
+      _hover={{ color: "blue.500" }}
+    >
+      <HStack gap={1}>
+        <Text fontWeight="bold">{label}</Text>
+        <Box color={isActive ? "blue.500" : "gray.300"}>
+          {isActive && config.direction === "desc" ? "▼" : "▲"}
+        </Box>
+      </HStack>
+    </Table.ColumnHeader>
   );
 }
