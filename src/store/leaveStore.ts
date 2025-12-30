@@ -20,7 +20,7 @@ interface LeaveState {
   fetchEmployees: () => Promise<void>;
 }
 
-export const useLeaveStore = create<LeaveState>((set, get) => ({
+export const useLeaveStore = create<LeaveState>((set) => ({
   leaves: [],
   loading: false,
   error: null,
@@ -38,6 +38,7 @@ export const useLeaveStore = create<LeaveState>((set, get) => ({
   updateLeave: async (id, payload) => {
     try {
       const updated = await leaveService.update(id, payload);
+      console.log("Updated leave:", updated);
       set((state) => ({
         leaves: state.leaves.map((l) =>
           l.id === id ? { ...l, ...payload } : l
@@ -64,6 +65,7 @@ export const useLeaveStore = create<LeaveState>((set, get) => ({
     set({ loading: true });
     try {
       const newLeave = await leaveService.create(payload);
+      console.log("Created leave:", newLeave);
       // Sau khi tạo thành công, nên fetch lại để lấy employeeName từ bảng profiles
       const data = await leaveService.getAll();
       set({ leaves: data, loading: false });

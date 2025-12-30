@@ -20,7 +20,7 @@ import { getAvatarUrl } from "../services/employeeService";
 import EmployeeModal from "../components/EmployeeModal";
 import { useAuthStore } from "../store/authStore";
 import ChangePasswordForm from "../components/ChangePasswordForm";
-import { ArrowLeft, Edit, Trash2, ShieldCheck, Mail, MapPin } from "lucide-react";
+import { ArrowLeft, Trash2, ShieldCheck, Mail, MapPin } from "lucide-react";
 
 export default function EmployeeDetailPage() {
   const { id } = useParams<{ id: string }>();

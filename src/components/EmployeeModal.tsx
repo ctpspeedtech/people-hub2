@@ -13,7 +13,7 @@ import {
   Portal,
 } from "@chakra-ui/react";
 import { toaster } from "../lib/toaster";
-import { Upload, ShieldCheck, User } from "lucide-react";
+import { Upload, ShieldCheck } from "lucide-react";
 
 import type { Employee as EmployeeType } from "../services/employeeService";
 import { createEmployee, updateEmployee, uploadAvatar } from "../services/employeeService";
@@ -53,7 +53,7 @@ export default function EmployeeModal({ onSuccess, onClose, employee, text, ...p
     if (open) {
       // Load danh sách phòng ban khi mở modal
       departmentService.getAll().then((d) => setDepartments(d || []));
-      
+
       if (employee) {
         setForm({
           email: employee.email || "",
@@ -121,10 +121,10 @@ export default function EmployeeModal({ onSuccess, onClose, employee, text, ...p
       setOpen(false);
       onSuccess?.();
     } catch (error: any) {
-      toaster.update(toastId, { 
-        title: "Lỗi", 
-        description: error?.message || "Không thể lưu thông tin", 
-        type: "error" 
+      toaster.update(toastId, {
+        title: "Lỗi",
+        description: error?.message || "Không thể lưu thông tin",
+        type: "error"
       });
     } finally {
       setLoading(false);
@@ -136,7 +136,7 @@ return (
       <Dialog.Trigger asChild>
         <Button size="sm" colorPalette="blue" {...props}>{text}</Button>
       </Dialog.Trigger>
-      
+
       {/* Portal giúp đưa Modal ra khỏi luồng render thông thường để không làm vỡ layout */}
       <Portal>
         <Dialog.Backdrop bg="blackAlpha.600" />
@@ -153,13 +153,13 @@ return (
                 {/* Avatar Section */}
                 <Box display="flex" alignItems="center" gap={4}>
                   {avatarPreview ? (
-                    <Image 
-                      src={avatarPreview} 
-                      boxSize="80px" 
-                      borderRadius="full" 
-                      objectFit="cover" 
-                      border="2px solid" 
-                      borderColor="blue.500" 
+                    <Image
+                      src={avatarPreview}
+                      boxSize="80px"
+                      borderRadius="full"
+                      objectFit="cover"
+                      border="2px solid"
+                      borderColor="blue.500"
                     />
                   ) : (
                     <Box boxSize="80px" borderRadius="full" bg="gray.100" display="flex" alignItems="center" justifyContent="center" fontSize="2xl" color="gray.400" fontWeight="bold">
@@ -208,9 +208,9 @@ return (
                     <Field.Label display="flex" alignItems="center" gap={2}>
                        <ShieldCheck size={14} /> Vai trò hệ thống
                     </Field.Label>
-                    <select 
-                      name="role" 
-                      value={form.role} 
+                    <select
+                      name="role"
+                      value={form.role}
                       onChange={handleInputChange}
                       style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #E2E8F0', fontSize: '14px', background: 'white' }}
                     >
@@ -221,9 +221,9 @@ return (
 
                   <Field.Root>
                     <Field.Label>Phòng ban</Field.Label>
-                    <select 
-                      name="department_id" 
-                      value={form.department_id} 
+                    <select
+                      name="department_id"
+                      value={form.department_id}
                       onChange={handleInputChange}
                       style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #E2E8F0', fontSize: '14px', background: 'white' }}
                     >

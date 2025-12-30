@@ -3,7 +3,6 @@ import {
   Box,
   Heading,
   Table,
-  Spinner,
   Text,
   HStack,
   Input,
@@ -25,15 +24,15 @@ type SortConfig = {
 
 export default function EmployeesPage() {
   const navigate = useNavigate();
-  const { employees, loading, fetchAll } = useEmployeeStore();
-  
+  const { employees, fetchAll } = useEmployeeStore();
+
   const [avatarMap, setAvatarMap] = useState<Record<string, string | null>>({});
   const [query, setQuery] = useState("");
-  
+
   // 1. State cho Sort
-  const [sortConfig, setSortConfig] = useState<SortConfig>({ 
-    key: "full_name", 
-    direction: "asc" 
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
+    key: "full_name",
+    direction: "asc"
   });
 
   const showDetails = useBreakpointValue({ base: false, lg: true });
@@ -70,9 +69,9 @@ export default function EmployeesPage() {
     // A. Lọc theo query
     const q = query.trim().toLowerCase();
     let result = [...employees];
-    
+
     if (q) {
-      result = result.filter((e) => 
+      result = result.filter((e) =>
         e.email?.toLowerCase().includes(q) ||
         e.full_name?.toLowerCase().includes(q) ||
         (e.departments?.name ?? "").toLowerCase().includes(q)
@@ -106,10 +105,10 @@ export default function EmployeesPage() {
         <Heading size="lg">Quản lý nhân viên</Heading>
         <Spacer />
         <HStack width={{ base: "full", md: "auto" }} gap={3}>
-          <Input 
-            placeholder="Tìm kiếm..." 
-            value={query} 
-            onChange={(e) => setQuery(e.target.value)} 
+          <Input
+            placeholder="Tìm kiếm..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
           />
           <EmployeeModal onSuccess={fetchAll} text="Thêm nhân viên" />
         </HStack>
@@ -120,12 +119,12 @@ export default function EmployeesPage() {
           <Table.Header bg="gray.50">
             <Table.Row>
               <Table.ColumnHeader w="60px">Avatar</Table.ColumnHeader>
-              
+
               {/* Thêm Sortable Header */}
               <SortHeader label="Họ tên" sortKey="full_name" config={sortConfig} onSort={requestSort} />
               <SortHeader label="Phòng ban" sortKey="department_name" config={sortConfig} onSort={requestSort} />
               <SortHeader label="Email" sortKey="email" config={sortConfig} onSort={requestSort} />
-              
+
               {showDetails && (
                 <>
                   <SortHeader label="Vị trí" sortKey="position" config={sortConfig} onSort={requestSort} />
@@ -167,16 +166,16 @@ export default function EmployeesPage() {
 }
 
 // Component phụ cho Header có Sort
-function SortHeader({ label, sortKey, config, onSort }: { 
-  label: string, 
-  sortKey: SortConfig["key"], 
-  config: SortConfig, 
-  onSort: (key: SortConfig["key"]) => void 
+function SortHeader({ label, sortKey, config, onSort }: {
+  label: string,
+  sortKey: SortConfig["key"],
+  config: SortConfig,
+  onSort: (key: SortConfig["key"]) => void
 }) {
   const isActive = config.key === sortKey;
   return (
-    <Table.ColumnHeader 
-      onClick={() => onSort(sortKey)} 
+    <Table.ColumnHeader
+      onClick={() => onSort(sortKey)}
       cursor="pointer"
       userSelect="none"
       _hover={{ color: "blue.500" }}

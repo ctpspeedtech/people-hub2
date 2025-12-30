@@ -16,7 +16,7 @@ interface EmployeeState {
   remove: (id: string) => Promise<void>;
 }
 
-export const useEmployeeStore = create<EmployeeState>((set, get) => ({
+export const useEmployeeStore = create<EmployeeState>((set) => ({
   employees: [],
   loading: false,
   error: null,
