@@ -16,7 +16,11 @@ import { toaster } from "../lib/toaster";
 import { Upload, ShieldCheck } from "lucide-react";
 
 import type { Employee as EmployeeType } from "../services/employeeService";
-import { createEmployee, updateEmployee, uploadAvatar } from "../services/employeeService";
+import {
+  createEmployee,
+  updateEmployee,
+  uploadAvatar,
+} from "../services/employeeService";
 import { departmentService } from "../services/departmentService";
 
 interface Props {
@@ -41,11 +45,19 @@ const INITIAL_FORM = {
   role: "employee", // Mặc định là nhân viên
 };
 
-export default function EmployeeModal({ onSuccess, onClose, employee, text, ...props }: Props) {
+export default function EmployeeModal({
+  onSuccess,
+  onClose,
+  employee,
+  text,
+  ...props
+}: Props) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState(INITIAL_FORM);
-  const [departments, setDepartments] = useState<Array<{ id: string; name: string }>>([]);
+  const [departments, setDepartments] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
@@ -76,7 +88,9 @@ export default function EmployeeModal({ onSuccess, onClose, employee, text, ...p
     }
   }, [open, employee]);
 
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
@@ -94,10 +108,11 @@ export default function EmployeeModal({ onSuccess, onClose, employee, text, ...p
     const toastId = toaster.create({ title: "Đang xử lý...", type: "loading" });
 
     try {
-      // Loại bỏ các trường rỗng trước khi gửi
-      const payload: any = Object.fromEntries(
-        Object.entries(form).filter(([_, v]) => v !== "")
-      );
+      // Nếu là cập nhật, gửi toàn bộ form để có thể xóa trắng các field không bắt buộc
+      // Nếu là tạo mới, có thể lọc bỏ chuỗi rỗng để database dùng giá trị default
+      const payload: any = employee
+        ? { ...form }
+        : Object.fromEntries(Object.entries(form).filter(([_, v]) => v !== ""));
 
       let targetId = employee?.id;
 
@@ -124,17 +139,19 @@ export default function EmployeeModal({ onSuccess, onClose, employee, text, ...p
       toaster.update(toastId, {
         title: "Lỗi",
         description: error?.message || "Không thể lưu thông tin",
-        type: "error"
+        type: "error",
       });
     } finally {
       setLoading(false);
     }
   };
 
-return (
+  return (
     <Dialog.Root open={open} onOpenChange={(e) => setOpen(e.open)} size="lg">
       <Dialog.Trigger asChild>
-        <Button size="sm" colorPalette="blue" {...props}>{text}</Button>
+        <Button size="sm" colorPalette="blue" {...props}>
+          {text}
+        </Button>
       </Dialog.Trigger>
 
       {/* Portal giúp đưa Modal ra khỏi luồng render thông thường để không làm vỡ layout */}
@@ -162,14 +179,31 @@ return (
                       borderColor="blue.500"
                     />
                   ) : (
-                    <Box boxSize="80px" borderRadius="full" bg="gray.100" display="flex" alignItems="center" justifyContent="center" fontSize="2xl" color="gray.400" fontWeight="bold">
+                    <Box
+                      boxSize="80px"
+                      borderRadius="full"
+                      bg="gray.100"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                      fontSize="2xl"
+                      color="gray.400"
+                      fontWeight="bold"
+                    >
                       {form.full_name?.charAt(0) || "?"}
                     </Box>
                   )}
                   <Box>
-                    <Text fontSize="sm" fontWeight="bold" mb={1}>Ảnh đại diện</Text>
-                    <label style={{ cursor: 'pointer' }}>
-                      <input type="file" hidden accept="image/*" onChange={handleFileChange} />
+                    <Text fontSize="sm" fontWeight="bold" mb={1}>
+                      Ảnh đại diện
+                    </Text>
+                    <label style={{ cursor: "pointer" }}>
+                      <input
+                        type="file"
+                        hidden
+                        accept="image/*"
+                        onChange={handleFileChange}
+                      />
                       <Button as="span" size="xs" variant="outline" gap={2}>
                         <Upload size={14} /> Tải ảnh lên
                       </Button>
@@ -182,37 +216,87 @@ return (
                 {/* Thông tin chính */}
                 <SimpleGrid columns={2} gap={4}>
                   <Field.Root>
-                    <Field.Label>Họ tên <Text as="span" color="red.500">*</Text></Field.Label>
-                    <Input name="full_name" value={form.full_name} onChange={handleInputChange} />
+                    <Field.Label>
+                      Họ tên{" "}
+                      <Text as="span" color="red.500">
+                        *
+                      </Text>
+                    </Field.Label>
+                    <Input
+                      name="full_name"
+                      value={form.full_name}
+                      onChange={handleInputChange}
+                    />
                   </Field.Root>
 
                   <Field.Root>
-                    <Field.Label>Email <Text as="span" color="red.500">*</Text></Field.Label>
-                    <Input name="email" type="email" value={form.email} onChange={handleInputChange} />
+                    <Field.Label>
+                      Email{" "}
+                      <Text as="span" color="red.500">
+                        *
+                      </Text>
+                    </Field.Label>
+                    <Input
+                      name="email"
+                      type="email"
+                      value={form.email}
+                      onChange={handleInputChange}
+                    />
                   </Field.Root>
 
                   <Field.Root>
                     <Field.Label>Số điện thoại</Field.Label>
-                    <Input name="phone" value={form.phone} onChange={handleInputChange} />
+                    <Input
+                      name="phone"
+                      value={form.phone}
+                      onChange={handleInputChange}
+                    />
                   </Field.Root>
 
                   <Field.Root>
                     <Field.Label>Vị trí</Field.Label>
-                    <Input name="position" value={form.position} onChange={handleInputChange} />
+                    <Input
+                      name="position"
+                      value={form.position}
+                      onChange={handleInputChange}
+                    />
                   </Field.Root>
                 </SimpleGrid>
+                <Field.Root>
+                  <Field.Label>Trình độ học vấn</Field.Label>
+                  <Input
+                    name="education"
+                    value={form.education}
+                    onChange={handleInputChange}
+                  />
+                </Field.Root>
 
                 {/* Phân quyền & Phòng ban */}
-                <SimpleGrid columns={2} gap={4} p={4} bg="gray.50" borderRadius="lg" border="1px solid" borderColor="gray.100">
+                <SimpleGrid
+                  columns={2}
+                  gap={4}
+                  p={4}
+                  bg="gray.50"
+                  borderRadius="lg"
+                  border="1px solid"
+                  borderColor="gray.100"
+                >
                   <Field.Root>
                     <Field.Label display="flex" alignItems="center" gap={2}>
-                       <ShieldCheck size={14} /> Vai trò hệ thống
+                      <ShieldCheck size={14} /> Vai trò hệ thống
                     </Field.Label>
                     <select
                       name="role"
                       value={form.role}
                       onChange={handleInputChange}
-                      style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #E2E8F0', fontSize: '14px', background: 'white' }}
+                      style={{
+                        width: "100%",
+                        padding: "8px",
+                        borderRadius: "6px",
+                        border: "1px solid #E2E8F0",
+                        fontSize: "14px",
+                        background: "white",
+                      }}
                     >
                       <option value="employee">Nhân viên (Employee)</option>
                       <option value="admin">Quản trị viên (Admin)</option>
@@ -225,11 +309,20 @@ return (
                       name="department_id"
                       value={form.department_id}
                       onChange={handleInputChange}
-                      style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #E2E8F0', fontSize: '14px', background: 'white' }}
+                      style={{
+                        width: "100%",
+                        padding: "8px",
+                        borderRadius: "6px",
+                        border: "1px solid #E2E8F0",
+                        fontSize: "14px",
+                        background: "white",
+                      }}
                     >
                       <option value="">-- Chọn phòng ban --</option>
                       {departments.map((d) => (
-                        <option key={d.id} value={d.id}>{d.name}</option>
+                        <option key={d.id} value={d.id}>
+                          {d.name}
+                        </option>
                       ))}
                     </select>
                   </Field.Root>
@@ -239,23 +332,40 @@ return (
                 <SimpleGrid columns={2} gap={4}>
                   <Field.Root>
                     <Field.Label>Cấp bậc</Field.Label>
-                    <Input name="level" value={form.level} onChange={handleInputChange} />
+                    <Input
+                      name="level"
+                      value={form.level}
+                      onChange={handleInputChange}
+                    />
                   </Field.Root>
 
                   <Field.Root>
                     <Field.Label>Ngày sinh</Field.Label>
-                    <Input name="birthday" type="date" value={form.birthday} onChange={handleInputChange} />
+                    <Input
+                      name="birthday"
+                      type="date"
+                      value={form.birthday}
+                      onChange={handleInputChange}
+                    />
                   </Field.Root>
                 </SimpleGrid>
 
                 <Field.Root>
                   <Field.Label>Địa chỉ</Field.Label>
-                  <Input name="address" value={form.address} onChange={handleInputChange} />
+                  <Input
+                    name="address"
+                    value={form.address}
+                    onChange={handleInputChange}
+                  />
                 </Field.Root>
 
                 <Field.Root>
                   <Field.Label>Ghi chú</Field.Label>
-                  <Input name="note" value={form.note} onChange={handleInputChange} />
+                  <Input
+                    name="note"
+                    value={form.note}
+                    onChange={handleInputChange}
+                  />
                 </Field.Root>
               </Stack>
             </Dialog.Body>
@@ -264,7 +374,11 @@ return (
               <Dialog.ActionTrigger asChild>
                 <Button variant="ghost">Hủy</Button>
               </Dialog.ActionTrigger>
-              <Button onClick={handleSubmit} loading={loading} colorPalette="blue">
+              <Button
+                onClick={handleSubmit}
+                loading={loading}
+                colorPalette="blue"
+              >
                 {employee ? "Lưu thay đổi" : "Tạo nhân viên"}
               </Button>
             </Dialog.Footer>
