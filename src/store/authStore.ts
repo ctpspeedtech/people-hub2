@@ -1,12 +1,14 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { supabase } from "../lib/supabase";
+import { getAvatarUrl } from "../services/employeeService";
 
 type AuthState = {
   user: any;
   profile: any;
   loading: boolean;
   isAdmin: boolean;
+  avatarPath: string | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   initAuth: () => Promise<void>;
@@ -20,6 +22,7 @@ export const useAuthStore = create<AuthState>()(
       profile: null,
       loading: false,
       isAdmin: false,
+      avatarPath: "",
 
       login: async (email, password) => {
         set({ loading: true });
@@ -82,6 +85,7 @@ export const useAuthStore = create<AuthState>()(
             profile,
             isAdmin: profile?.role === "admin",
             loading: false,
+            avatarPath: await getAvatarUrl(profile?.avatar_url)
           });
         } catch (error) {
           set({ user: null, profile: null, isAdmin: false, loading: false });

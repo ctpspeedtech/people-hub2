@@ -15,7 +15,7 @@ const NAV_ITEMS = [
 export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout, user, profile } = useAuthStore();
+  const { logout, user, profile, avatarPath } = useAuthStore();
 
   const isActive = (path: string) => location.pathname.startsWith(path);
 
@@ -102,7 +102,7 @@ export default function Navbar() {
               <Avatar.Fallback>
                 {(user?.email ?? "U").charAt(0).toUpperCase()}
               </Avatar.Fallback>
-              {profile?.avatar_url && <Avatar.Image src={profile.avatar_url} />}
+              {avatarPath && <Avatar.Image src={avatarPath} />}
             </Avatar.Root>
           </HStack>
 
